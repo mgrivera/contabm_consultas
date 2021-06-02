@@ -1,0 +1,44 @@
+{
+  "name": "contabm_consultas",
+  "private": true,
+  "scripts": {
+    "start": "meteor run",
+    "test": "meteor test --once --driver-package meteortesting:mocha",
+    "test-app": "TEST_WATCH=1 meteor test --full-app --driver-package meteortesting:mocha",
+    "visualize": "meteor --production --extra-packages bundle-visualizer"
+  },
+  "dependencies": {
+    "@babel/runtime": "7.11.2",
+    "bcrypt": "5.0.1",
+    "bootstrap": "4.6.0",
+    "meteor-node-stubs": "^1.0.1",
+    "moment": "2.29.1",
+    "numeral": "2.0.6",
+    "react": "16.13.1",
+    "react-bootstrap": "1.5.2",
+    "react-bootstrap-icons": "1.4.0",
+    "react-data-grid": "6.0.2-0",
+    "react-dom": "16.13.1",
+    "react-router-dom": "5.2.0",
+    "react-select": "4.3.1",
+    "sequelize": "6.6.2",
+    "simpl-schema": "1.12.0",
+    "tedious": "11.0.7"
+  },
+  "meteor": {
+    "mainModule": {
+      "client": "client/main.jsx",
+      "server": "server/main.js"
+    },
+    "testModule": "tests/main.js"
+  },
+  "devDependencies": {
+    "babel-eslint": "10.1.0",
+    "eslint": "7.23.0",
+    "eslint-import-resolver-meteor": "0.4.0",
+    "eslint-plugin-import": "2.22.1",
+    "eslint-plugin-meteor": "7.3.0",
+    "eslint-plugin-react": "7.23.1",
+    "eslint-plugin-react-hooks": "4.2.0"
+  }
+}

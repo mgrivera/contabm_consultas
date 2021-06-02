@@ -1,0 +1,53 @@
+body {
+  padding: 10px;
+  font-family: sans-serif;
+}
+
+/* to style the Link component in react-router  */
+.text-link {
+    color: #7F7F7F;
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.text-link-menu {
+    color: #7F7F7F;
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.text-link-menu:hover {
+    color: #191919;
+    font-style: italic;
+    text-decoration: none;
+}
+
+.text-link:hover {
+    color: #191919;
+    text-decoration: none;
+}
+
+.bootstrap-icon {
+    color: #7F7F7F;
+}
+
+.bootstrap-icon:hover {
+    color: #4C4C4C;
+}
+
+.bootstrap-icon-as-link {
+    color: #317BFF;
+}
+
+.bootstrap-icon-as-link:hover {
+    color: #0056B3;
+}
+
+.jumbotron {
+  background: url('/static/imports/images/jumbotron.jpg') no-repeat center center;
+  -webkit-background-size: cover;
+  -moz-background-size: cover;
+  -o-background-size: cover;
+  background-size: cover;
+  color: #ffffff;
+}

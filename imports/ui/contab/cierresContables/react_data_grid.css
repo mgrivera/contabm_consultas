@@ -1,0 +1,15 @@
+
+/* style modification for the react-data-grid css  */
+
+.react-grid-Row--even .react-grid-Cell { background-color: #f2f2f2; }
+
+/* para agregar propios styles al react-data-grid, una forma ponerla en un div con una css class. Luego hacer esto que sigue:  */
+.div-react-data-grid .react-grid-Header { font-size: small; color: #818193; }
+.div-react-data-grid .react-grid-HeaderCell { background: #CADFF0; }
+.div-react-data-grid .react-grid-Cell { font-size: small; }
+
+.div-react-data-grid .react-grid-HeaderCell .text-center { text-align: center; }
+.div-react-data-grid .react-grid-cell .text-center { text-align: center; }
+
+.div-react-data-grid .react-grid-HeaderCell .text-right { text-align: right; }
+.div-react-data-grid .react-grid-cell .text-right { text-align: right; }
