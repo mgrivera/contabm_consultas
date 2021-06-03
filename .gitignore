@@ -1,4 +1,5 @@
 node_modules/
 settings.*.json
+settings.json
 run.*
 package-lock.json
