@@ -25,6 +25,7 @@ const MovimientoDeCuentasContables = () => {
     const [companiaContabSeleccionada, setCompaniaContabSeleccionada] = useState({});
     
     useEffect(() => {
+        setShowSpinner(false);
         setLoadCompaniaContabSeleccionada(true);
 
         Meteor.call('leerCompaniaContabSeleccionada', (err, result) => {
@@ -91,14 +92,16 @@ const MovimientoDeCuentasContables = () => {
 
                     <Row>
                         <Col>
-                            {loading && <Spinner />}
-                            {message.show && <Message message={message} setMessage={setMessage} />}
+                            <div style={{ marginTop: '15px' }}>
+                                {loading && <Spinner />}
+                                {message.show && <Message message={message} setMessage={setMessage} />}
+                            </div>
                         </Col>
                     </Row>
 
                     <Switch>
                         <Route exact path={`${url}/filter`}>
-                            <Filter companiaContabSeleccionada={companiaContabSeleccionada} setShowSpinner={setShowSpinner} />
+                            <Filter companiaContabSeleccionada={companiaContabSeleccionada} />
                         </Route>
 
                         <Route exact path={`${url}/list`}>
@@ -107,7 +110,7 @@ const MovimientoDeCuentasContables = () => {
 
                         {/* inicialmente, cuando se llega desde Home, mostramos Filter  */}
                         <Route exact path={`${url}`}>
-                            <Filter companiaContabSeleccionada={companiaContabSeleccionada} setShowSpinner={setShowSpinner} />
+                            <Filter companiaContabSeleccionada={companiaContabSeleccionada} />
                         </Route>
                     </Switch>
                 </Container>

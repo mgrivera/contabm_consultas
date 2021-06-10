@@ -19,7 +19,6 @@ hot-module-replacement@0.2.0  # Update client in development without reloading t
 static-html             # Define static page content in .html files
 react-meteor-data       # React higher-order component for reactively tracking Meteor data
 dev-error-overlay
-nathantreid:static-assets
 alanning:roles
 accounts-password
 aldeed:collection2-core

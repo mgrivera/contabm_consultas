@@ -8,7 +8,7 @@ import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 
 import { Row, Col } from 'react-bootstrap';
-import { Navbar, Nav } from 'react-bootstrap';
+import { Table, Navbar, Nav } from 'react-bootstrap';
 
 import ReactDataGrid from 'react-data-grid';
 import './react_data_grid.css';
@@ -19,10 +19,16 @@ const reactDataGridDateFormatter = ({ value }) => moment(value).format('DD-MMM-Y
 const columns = [
     { key: 'simboloMoneda', name: 'Mon', resizable: true, sortable: true, frozen: false, width: 80, cellClass: 'text-center' },
     { key: 'cuenta', name: 'Cuenta contable', resizable: true, sortable: true, frozen: false, width: 150 },
-    { key: 'nombreCuenta', name: 'Nombre', resizable: true, sortable: true, frozen: false },
+    { key: 'nombreCuenta', name: 'Nombre', resizable: true, sortable: true, frozen: false, width: 200 },
     { key: 'count', name: 'Cant mvtos', resizable: true, sortable: true, frozen: false, cellClass: 'text-center', width: 100 },
+
+    { key: 'saldoAnterior', name: 'Saldo ant', resizable: true, sortable: true, formatter: reactDataGridNumberFormatter, frozen: false, cellClass: 'text-right', width: 150 },
+
     { key: 'sumOfDebe', name: 'Debe', resizable: true, sortable: true, formatter: reactDataGridNumberFormatter, frozen: false, cellClass: 'text-right', width: 150 },
     { key: 'sumOfHaber', name: 'Haber', resizable: true, sortable: true, formatter: reactDataGridNumberFormatter, frozen: false, cellClass: 'text-right', width: 150 },
+
+    { key: 'saldoActual', name: 'Saldo actual', resizable: true, sortable: true, formatter: reactDataGridNumberFormatter, frozen: false, cellClass: 'text-right', width: 150 },
+
     { key: 'fechaMovMasReciente', name: 'F mov más reciente', resizable: true, sortable: true, formatter: reactDataGridDateFormatter, frozen: false, cellClass: 'text-center', width: 150 }
 ];
 
@@ -41,7 +47,8 @@ const CuentasContables = ({ filtrosLoading,
                                                leerResto: false,
                                                loadingRecordCount: true,
                                                loadingPage: false,
-                                               items: []
+                                               items: [], 
+                                               totales: {}
     })
 
     // --------------------------------------------------------------------------------
@@ -149,7 +156,14 @@ const CuentasContables = ({ filtrosLoading,
                     page = pageData.cantPages;
                 }
 
-                setPageData((prevState) => ({ ...prevState, page, items, loadingPage: false }));
+                const totales = { 
+                    saldoAnterior: items.reduce((acum, x) => { return acum + x.saldoAnterior; }, 0), 
+                    debe: items.reduce((acum, x) => { return acum + x.sumOfDebe; }, 0),
+                    haber: items.reduce((acum, x) => { return acum + x.sumOfHaber; }, 0),
+                    saldoActual: items.reduce((acum, x) => { return acum + x.saldoActual; }, 0),
+                }
+
+                setPageData((prevState) => ({ ...prevState, page, items, totales, loadingPage: false }));
                 setShowSpinner(false);
             })
     }, [pageData.loadingPage])
@@ -247,6 +261,33 @@ const CuentasContables = ({ filtrosLoading,
                         />
                     </div>
                 </Col>
+            </Row>
+
+            <Row style={{ marginTop: '25px' }}>
+                <Col />
+                <Col sm={10}>
+                    <Table striped bordered hover size="sm" style={{ fontSize: 'small' }}>
+                        <thead style={{ backgroundColor: '#CADFF0', color: '#818193' }}>
+                            <tr>
+                                <th style={{ width: '20%' }}></th>
+                                <th style={{ width: '20%' }}>Saldo anterior</th>
+                                <th style={{ width: '20%' }}>Debe</th>
+                                <th style={{ width: '20%' }}>Haber</th>
+                                <th style={{ width: '20%' }}>Saldo actual</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Totales:</td>
+                                <td>{numeral(pageData.totales.saldoAnterior).format('0,0.00')}</td>
+                                <td>{numeral(pageData.totales.debe).format('0,0.00')}</td>
+                                <td>{numeral(pageData.totales.haber).format('0,0.00')}</td>
+                                <td>{numeral(pageData.totales.saldoActual).format('0,0.00')}</td>
+                            </tr>
+                        </tbody>
+                    </Table>
+                </Col>
+                <Col />
             </Row>
         </>
     )

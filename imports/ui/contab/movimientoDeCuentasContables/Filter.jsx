@@ -15,11 +15,13 @@ import { useHistory, useRouteMatch } from "react-router-dom";
 import { Row, Col, Button } from 'react-bootstrap';
 import { Form, Table } from 'react-bootstrap';
 
+import Spinner from '/imports/ui/genericReactComponents/Spinner';
+
 import { Filtros } from '/imports/collections/filtros';
 
 import './styles.css'; 
 
-const Filter = ({ setShowSpinner, companiaContabSeleccionada }) => {
+const Filter = ({ companiaContabSeleccionada }) => {
 
     const { url } = useRouteMatch();
     const history = useHistory();
@@ -28,6 +30,7 @@ const Filter = ({ setShowSpinner, companiaContabSeleccionada }) => {
     // el select (html ddl) muestra  siempre la 1ra opción (Enero), pero este valor *no* está en el state. Si el usuario selecciona 
     // un elemento en el select, por supuesto, el valor pasa al state ... 
     const [formValues, setFormValues] = useState({ mes: '1', ano: '2021' });
+    const [showSpinner, setShowSpinner] = useState(false);
 
     const [cuentasContablesSeleccionadas, setCuentasContablesSeleccionadas] = useState([]);
     const [monedasSeleccionadas, setMonedasSeleccionadas] = useState([]);
@@ -106,11 +109,6 @@ const Filter = ({ setShowSpinner, companiaContabSeleccionada }) => {
         history.push(url2);
     }
 
-    // el spinner está en el parent component (MovimientoDeCuentasContables)
-    useEffect(() => { 
-        setShowSpinner(filtrosLoading);
-    }, [setShowSpinner, filtrosLoading])
-
     // -----------------------------------------------------------------------------------------------------
     // promise para leer las cuentas contables cuando el usuario hace el search en el react-select/async 
     // a diferencia de otros casos similares, incluímos esta en la función para poder pasar un prop como 
@@ -167,9 +165,17 @@ const Filter = ({ setShowSpinner, companiaContabSeleccionada }) => {
         const monedas = monedasSeleccionadas.filter(x => x.value != value);
         setMonedasSeleccionadas(monedas);
     }
+
+    const loading = showSpinner || filtrosLoading; 
     
     return (
         <div style={{ marginTop: '15px'}}>
+            <Row>
+                <Col>
+                    {loading && <Spinner />}
+                </Col>
+            </Row>
+
             <Form>
 
                 <Row>
@@ -303,7 +309,6 @@ const Filter = ({ setShowSpinner, companiaContabSeleccionada }) => {
 }
 
 Filter.propTypes = {
-    setShowSpinner: PropTypes.func.isRequired, 
     companiaContabSeleccionada: PropTypes.object
 };
 

@@ -4,17 +4,7 @@ import { Link } from "react-router-dom";
 
 import { Navbar, Nav, NavDropdown } from 'react-bootstrap';
 import { Jumbotron, Container, Row, Col } from 'react-bootstrap';
-
 import { Question } from 'react-bootstrap-icons';
-
-// por algún error en nathantreid:static-assets, debemos hacer un rebuild la primera vez que se inicia la aplicación, 
-// para que los imports que siguen funcionen. 
-// Esperemos que esta situación sea corregida pronto ... 
-
-import Logo from '/imports/images/logo.png';                        // esto es posible luego de instalar: nathantreid:static-assets
-
-// import JumbotronImage from '/imports/images/jumbotron.jpg';
-import '/imports/images/jumbotron.jpg';
 
 import MeteorLogin from '/imports/ui/generales/meteorLogin/MeteorLogin';
 
@@ -26,7 +16,7 @@ const Home = () => {
                 <Navbar className="navbar" style={{ backgroundColor: 'white', marginBottom: '20px' }} expand="md">
                     <Navbar.Brand >
                         <Link to="/">
-                            <img className="img-responsive" src={Logo} alt="logo" />
+                            <img className="img-responsive" src={'/images/logo.png'} alt="logo" />
                         </Link>
                     </Navbar.Brand>
                     <Navbar.Toggle aria-controls="basic-navbar-nav" />
@@ -38,10 +28,7 @@ const Home = () => {
                                 <Link className='text-link-menu' to="/contab/movimientoCuentasContables">
                                     <span style={{ padding: '10px' }}>Movimiento de cuentas contables</span>
                                 </Link><br />
-                                <Link className='text-link-menu' to="/contab/cuentasYSusMovimientos">
-                                    <span style={{ padding: '10px'}}>Cuentas y sus movimientos</span>
-                                </Link><br />
-
+                                
                                 <NavDropdown.Divider />
 
                                 <Link className='text-link-menu' to="/contab/cierresContables">

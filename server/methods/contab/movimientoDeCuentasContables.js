@@ -8,6 +8,9 @@ import moment from 'moment';
 import { sequelize } from '/imports/sequelize/sequelize';
 import { TimeOffset } from '/imports/sequelize/sequelize';
 
+import { determinarMesFiscal } from '/server/ContabFunctions/determinarMesFiscal'; 
+import { nombreMesFiscalTablaSaldos } from '/server/ContabFunctions/nombreMesFiscalTablaSaldos'; 
+
 Meteor.methods(
     {
         // --------------------------------------------------------------------------------
@@ -112,9 +115,78 @@ Meteor.methods(
             // ajustamos las fechas para revertir la conversión que ocurre, para intentar convertir desde utc a local
             items.forEach(x => x.fechaMovMasReciente = moment(x.fechaMovMasReciente).add(TimeOffset, 'hours').toDate()); 
 
+            // determinamos el mes y año fiscal y el nombre de la columna en la tabla saldosContables que corresponde 
+            // al saldo anterior. Por ejemplo, si el mes es 01, el nombre de la columna es 'Inicial' 
+            const fecha = new Date(ano, (mes - 1), 1);      // recuérdese que para Date el mes es 0 based 
+            const result = await determinarMesFiscal(fecha, ciaContabSeleccionada); 
+            const result2 = nombreMesFiscalTablaSaldos(result.mesFiscal); 
+
+            const { anoFiscal } = result; 
+            const nombreColumnaTablaSaldos = result2.nombreMesFiscalAnterior; 
+
+            // ----------------------------------------------------------------------------------------------------------------
+            // ahora leemos los saldos 'anteriores' para las cuentas contables; nótese como lo hacemos: leemos los saldos
+            // de las cuentas y, en un paso posterior, buscamos el saldo en el array para cada cuenta que fue leída *antes*
+            // 
+            // nota: una cuenta contable puede, y es normal, tener dos registros de saldo para un mismo año, pues cada uno 
+            // es para la misma moneda pero para una moneda original diferente 
+            // ----------------------------------------------------------------------------------------------------------------
+
+            // usamos el filtro construido arriba para el 1er. query, pero cambiamos levemente para adaptar a este 2do query 
+            let filtroMonedasYCuentas2 = filtroMonedasYCuentas; 
+            filtroMonedasYCuentas2 = filtroMonedasYCuentas2.replace("d.CuentaContableID", "s.CuentaContableID");
+            filtroMonedasYCuentas2 = filtroMonedasYCuentas2.replace("m.Moneda", "s.Moneda");
+
+            const query2 = `Select s.Moneda as monedaId, s.CuentaContableID as cuentaId, 
+                            Sum(${nombreColumnaTablaSaldos}) as saldoAnterior  
+                            From SaldosContables s
+                            Where s.Ano = :anoFiscal And s.Cia = :ciaContab And ${filtroMonedasYCuentas2}
+                            Group By s.Moneda, s.CuentaContableID           
+            `
+            let saldos = [];
+
+            try {
+                saldos = await sequelize.query(query2, {
+                    replacements: { anoFiscal, ciaContab: ciaContabSeleccionada },
+                    type: sequelize.QueryTypes.SELECT
+                });
+            } catch (err) {
+                let message = err?.parent?.message;             // nótese cómo vienen los errores desde sequelize 
+                if (!message) { 
+                    message = err?.message; 
+                }
+                if (!message) { 
+                    message = JSON.stringify(err); 
+                }
+
+                return {
+                    error: true,
+                    message
+                }
+            }
+
+            if (!saldos) {
+                const message = `Error inesperado: hemos obtenido un error al intentar leer las cuentas contables y sus movimientos, 
+                                 para el criterio de selección (filtro) que Ud. ha indicado. <br />
+                                 Por favor revise.<br />
+                                 `;
+
+                return {
+                    error: true,
+                    message
+                }
+            }
+
+            // Ok, ahora leemos el saldo anterior para cada cuenta en el array 
+            items.forEach(x => {
+                const saldo = saldos.find(s => s.monedaId === x.monedaId && s.cuentaId == x.cuentaId); 
+                x.saldoAnterior = saldo?.saldoAnterior ? saldo?.saldoAnterior : 0; 
+                x.saldoActual = x.saldoAnterior + x.sumOfDebe - x.sumOfHaber; 
+            })
+
             return {
                 error: false,
-                items
+                items: items
             }
         }, 
 
