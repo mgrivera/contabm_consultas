@@ -3,5 +3,6 @@
 import '/server/methods/administracion/meteor.authentication';
 import '/server/methods/generales/companias';
 import '/server/methods/contab/cierres';
-import '/server/methods/contab/movimientoDeCuentasContables'; 
+import '/server/methods/contab/movimientoDeCuentasContables';
+import '/server/methods/contab/estadoGyP';
 import '/server/methods/generales/searchForReactSelectAsync'; 

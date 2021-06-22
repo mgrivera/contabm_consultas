@@ -3,11 +3,11 @@ import { Meteor } from 'meteor/meteor';
 
 import numeral from 'numeral';
 
-import React, { useState, useEffect } from 'react'; 
+import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 
 import { Row, Col } from 'react-bootstrap';
-import { Navbar, Nav } from 'react-bootstrap';
+import { Table, Navbar, Nav } from 'react-bootstrap';
 
 import ReactDataGrid from 'react-data-grid';
 import './react_data_grid.css';
@@ -15,18 +15,26 @@ import './react_data_grid.css';
 const reactDataGridNumberFormatter = ({ value }) => numeral(value).format('0,0.00');
 
 const columns = [
-    { key: 'fecha', name: 'Fecha', resizable: true, sortable: true, frozen: false, cellClass: 'text-center', width: 120 }, 
-    { key: 'comprobante', name: 'Comp', resizable: true, sortable: true, frozen: false, cellClass: 'text-center', width: 80 },
-    { key: 'partida', name: '##', resizable: true, sortable: true, frozen: false, cellClass: 'text-center', width: 60 },
-    { key: 'descripcion', name: 'Descripción', resizable: true, sortable: true, frozen: false, width: 200 },
-    { key: 'referencia', name: 'Referencia', resizable: true, sortable: true, frozen: false, width: 120 },
-    { key: 'debe', name: 'Debe', resizable: true, sortable: true, formatter: reactDataGridNumberFormatter, frozen: false, cellClass: 'text-right', width: 150 },
-    { key: 'haber', name: 'Haber', resizable: true, sortable: true, formatter: reactDataGridNumberFormatter, frozen: false, cellClass: 'text-right', width: 150 },
-    { key: 'factorCambio', name: 'F cambio', resizable: true, sortable: true, formatter: reactDataGridNumberFormatter, frozen: false, cellClass: 'text-right', width: 150 }, 
-    { key: 'centroCosto', name: 'Centro costo', resizable: true, sortable: true, frozen: false, width: 220 }
+    { key: 'simboloMoneda', name: 'Mon', resizable: true, sortable: true, frozen: false, width: 80, cellClass: 'text-center' },
+    { key: 'cuentaContable', name: 'Cuenta contable', resizable: true, sortable: true, frozen: false, width: 150 },
+    { key: 'nombreCuentaContable', name: 'Nombre', resizable: true, sortable: true, frozen: false, width: 200 },
+    { key: 'count', name: 'Cant mvtos', resizable: true, sortable: true, frozen: false, cellClass: 'text-center', width: 100 },
+
+    { key: 'saldoAnterior', name: 'Saldo ant', resizable: true, sortable: true, formatter: reactDataGridNumberFormatter, frozen: false, cellClass: 'text-right', width: 150 },
+
+    { key: 'sumOfDebe', name: 'Debe', resizable: true, sortable: true, formatter: reactDataGridNumberFormatter, frozen: false, cellClass: 'text-right', width: 150 },
+    { key: 'sumOfHaber', name: 'Haber', resizable: true, sortable: true, formatter: reactDataGridNumberFormatter, frozen: false, cellClass: 'text-right', width: 150 },
+
+    { key: 'saldoActual', name: 'Saldo actual', resizable: true, sortable: true, formatter: reactDataGridNumberFormatter, frozen: false, cellClass: 'text-right', width: 150 }
 ];
 
-const Movimientos = ({ selectedCuentaContable, mes, ano, centrosCosto, cc, ciaContabId, setMessage, setShowSpinner, setCurrentTab, setSelectedAsientoContable }) => {
+const CuentasContables = ({ filtrosLoading,
+    ciaContabId,
+    setMessage,
+    setShowSpinner,
+    setCurrentTab,
+    filtro, 
+    setTransformarGridData }) => {
 
     const [pageData, setPageData] = useState({
         page: 1,
@@ -34,41 +42,44 @@ const Movimientos = ({ selectedCuentaContable, mes, ano, centrosCosto, cc, ciaCo
         recordCount: 0,
         cantPages: 0,
         leerResto: false,
-        loadingRecordCount: false,
+        loadingRecordCount: true,
         loadingPage: false,
-        items: []
+        items: [],
+        totales: {}
     })
 
     // --------------------------------------------------------------------------------
     // para leer la cantidad de registros 
     useEffect(() => {
-        if (!selectedCuentaContable?.cuentaId) {
-            return; 
+        if (filtrosLoading || !pageData.loadingRecordCount) {
+            // este código necesita que el subscription 'filtro' se haya completado 
+            return;
+        }
+
+        const filtroIsObjectEmpty = !filtro.constructor === Object || Object.entries(filtro).length === 0;
+        if (filtroIsObjectEmpty) {
+            // filtro no es un object o es {} (empty)
+            return;
         }
 
         setShowSpinner(true);
 
-        // cada vez que este comprobante deba mostrar los movimientos de una cuenta en un mes, restablecemos su state 
-        const state = {
-            page: 1,
-            recsPerPage: 25,
-            recordCount: 0,
-            cantPages: 0,
-            leerResto: false,
-            loadingRecordCount: true,
-            loadingPage: false,
-            items: []
-        }; 
-
-        setPageData(state); 
-
         // determinamos la cantidad de registros que regresará la consulta 
-        Meteor.call('movimientoDeCuentasContables.leerMovimientos.recordCount', selectedCuentaContable.cuentaId, 
-                                                                                mes, 
-                                                                                ano, 
-                                                                                centrosCosto, cc, 
-                                                                                selectedCuentaContable.monedaId, 
-                                                                                ciaContabId, (err, result) => {
+        Meteor.call('estadoGyP.leerSaldosContables.recordCount', filtro, ciaContabId, (err, result) => {
+
+            if (err) {
+                const msg = {
+                    type: 'danger',
+                    message: `Error: ha ocurrido un error al intentar ejecutar esta función. El mensaje de error obtenido es: <br />
+                              ${err.message}`,
+                    show: true
+                }
+
+                setMessage(msg);
+                setShowSpinner(false);
+
+                return;
+            }
 
             const recordCount = result.recCount;
             const recsPerPage = pageData.recsPerPage;
@@ -78,30 +89,34 @@ const Movimientos = ({ selectedCuentaContable, mes, ano, centrosCosto, cc, ciaCo
             cantPages = (recordCount % recsPerPage) ? cantPages + 1 : cantPages; // si hay un resto, agregamos 1 página 
 
             setPageData((prevState) => ({ ...prevState, recordCount, cantPages, loadingRecordCount: false, loadingPage: true }));
-            setShowSpinner(false); 
+            setShowSpinner(false);
         })
 
-    }, [ selectedCuentaContable?.cuentaId, mes, ano, selectedCuentaContable?.monedaId, ciaContabId ])
+    }, [filtro, pageData.loadingRecordCount])
 
     // --------------------------------------------------------------------------------
     // para leer los registros 
     useEffect(() => {
 
-        if (pageData.loadingRecordCount || !pageData.loadingPage) {
+        if (filtrosLoading || pageData.loadingRecordCount || !pageData.loadingPage) {
             // este código necesita que el subscription 'filtro' se haya completado; también que se haya leído la cant de records (desde sql) 
+            return;
+        }
+
+        const filtroIsObjectEmpty = !filtro.constructor === Object || Object.entries(filtro).length === 0;
+        if (filtroIsObjectEmpty) {
+            // filtro no es un object o es {} (empty)
             return;
         }
 
         setShowSpinner(true);
 
         // cada vez que el usuario quiere una nueva página, o cuando tenemos la cantidad de registros (1ra vez), leemos el db
-        Meteor.call('movimientoDeCuentasContables.leerMovimientos', pageData.page,
-                                                                    pageData.recsPerPage,
-                                                                    pageData.recordCount,
-                                                                    pageData.leerResto,
-                                                                    selectedCuentaContable.cuentaId, 
-                                                                    mes, ano, centrosCosto, cc, selectedCuentaContable.monedaId, 
-                                                                    ciaContabId, (err, result) => {
+        Meteor.call('estadoGyP.leerSaldosContables', pageData.page,
+            pageData.recsPerPage,
+            pageData.recordCount,
+            pageData.leerResto,
+            filtro, ciaContabId, (err, result) => {
 
                 if (err) {
                     const msg = {
@@ -143,18 +158,6 @@ const Movimientos = ({ selectedCuentaContable, mes, ano, centrosCosto, cc, ciaCo
                 // recuperamos el index mayor; la 1ra vez, cuando no haya items, el index será siempre 0  
                 let maxIndex = items.reduce((acum, current) => (current.idx >= acum ? current.idx : acum), -1);
 
-                // agregamos el centro de costo, en base a los datos que regresan desde la ejecución del method 
-                result.items.forEach(x => {
-                    x.centroCosto = ""; 
-                    if (x.nombreCentroCosto) { 
-                        x.centroCosto = `${x.nombreCentroCosto} - ${x.nombreCortoCentroCosto}`; 
-
-                        if (x.suspendidoCentroCosto) { 
-                            x.centroCosto += " (susp)"; 
-                        }
-                    }
-                })
-
                 result.items.forEach(x => items.push({ idx: ++maxIndex, ...x }));
                 // ----------------------------------------------------------------------------------------------------------
 
@@ -164,10 +167,32 @@ const Movimientos = ({ selectedCuentaContable, mes, ano, centrosCosto, cc, ciaCo
                     page = pageData.cantPages;
                 }
 
-                setPageData((prevState) => ({ ...prevState, page, items, loadingPage: false }));
+                const totales = {
+                    saldoAnterior: items.reduce((acum, x) => { return acum + x.saldoAnterior; }, 0),
+                    debe: items.reduce((acum, x) => { return acum + x.sumOfDebe; }, 0),
+                    haber: items.reduce((acum, x) => { return acum + x.sumOfHaber; }, 0),
+                    saldoActual: items.reduce((acum, x) => { return acum + x.saldoActual; }, 0),
+                }
+
+                setPageData((prevState) => ({ ...prevState, page, items, totales, loadingPage: false }));
                 setShowSpinner(false);
             })
     }, [pageData.loadingPage])
+
+    const masRegistros = () => {
+        if (pageData.page < pageData.cantPages) {
+            const page = pageData.page + 1;
+            setPageData((prevState) => ({ ...prevState, page, loadingPage: true }));
+        }
+    }
+
+    const leerResto = () => {
+        if (pageData.page < pageData.cantPages) {
+            const page = pageData.page + 1;
+            const leerResto = true;
+            setPageData((prevState) => ({ ...prevState, page, leerResto, loadingPage: true }));
+        }
+    }
 
     // -----------------------------------------------------------------------------------------------------------
     // para que el react-data-grid ordene sus rows, cuando el usuario hace click en alguna columna 
@@ -192,58 +217,23 @@ const Movimientos = ({ selectedCuentaContable, mes, ano, centrosCosto, cc, ciaCo
         return [...initialRows].sort(comparer);
     };
 
-    const onCuentasRowClick = (index) => {
-
-        if (index === -1) { 
-            // el index es igual a -1 cuando el usuario hace un click en el header row
-            return; 
-        }
-
-        const row = pageData.items[index];
-        setSelectedAsientoContable(row);
-
-        // para ir a tab Movimientos 
-        setCurrentTab("asiento");
-    }
-
-    const masRegistros = () => {
-        if (pageData.page < pageData.cantPages) {
-            const page = pageData.page + 1;
-            setPageData((prevState) => ({ ...prevState, page, loadingPage: true }));
-        }
-    }
-
-    const leerResto = () => {
-        if (pageData.page < pageData.cantPages) {
-            const page = pageData.page + 1;
-            const leerResto = true;
-            setPageData((prevState) => ({ ...prevState, page, leerResto, loadingPage: true }));
-        }
+    const crearTranformar = () => {
+        // grabamos los items que usa este component al array que usa el component Transformar 
+        setTransformarGridData(pageData.items);
+        setCurrentTab("transformar");           // mostramos el tab Transformar 
     }
 
     const pagingText = `(${pageData.items.length} de ${pageData.recordCount} - pag ${pageData.page} de ${pageData.cantPages})`;
 
     return (
         <>
-            <Row style={{ topMargin: '5px' }}>
-                <Col>
-                    {(selectedCuentaContable && selectedCuentaContable.cuenta && selectedCuentaContable.nombreCuenta) &&
-                        <p>
-                            <b>Movimientos para la cuenta contable:
-                            {` ${selectedCuentaContable.cuenta} ${selectedCuentaContable.nombreCuenta}, `}
-                            {`el mes ${mes}/${ano} y la moneda ${selectedCuentaContable.simboloMoneda}`}</b>
-                        </p>
-                    }
-
-                    <p>
-                        Haga un <em>click</em> en algún movimiento, para leer y mostrar el asiento contable, y sus anexos, si existen.
-                    </p>
-                </Col>
-            </Row>
-
             <Row>
                 <Col>
                     <Navbar bg="light" variant="light" style={{ fontSize: '14px', maxHeight: '30px' }}>
+                        <Navbar.Collapse>
+                            <Nav.Link href="#" onClick={crearTranformar}>Transformar</Nav.Link>
+                        </Navbar.Collapse>
+
                         <Navbar.Collapse className="justify-content-end">
                             <Navbar.Text>
                                 {pagingText}
@@ -258,33 +248,56 @@ const Movimientos = ({ selectedCuentaContable, mes, ano, centrosCosto, cc, ciaCo
 
             <Row>
                 <Col>
-                    <div className="div-react-data-grid" style={{ width: 'auto' }}>
+                    <div className="div-react-data-grid">
                         <ReactDataGrid
                             columns={columns}
                             rowGetter={i => pageData.items[i]}
                             rowsCount={pageData.items.length}
                             minHeight={400}
-                            onRowClick={onCuentasRowClick}
                             onGridSort={(sortColumn, sortDirection) => handleGridSort(sortColumn, sortDirection)}
                         />
                     </div>
                 </Col>
             </Row>
+
+            <Row style={{ marginTop: '25px' }}>
+                <Col />
+                <Col sm={10}>
+                    <Table striped bordered hover size="sm" style={{ fontSize: 'small' }}>
+                        <thead style={{ backgroundColor: '#CADFF0', color: '#818193' }}>
+                            <tr>
+                                <th style={{ width: '20%' }}></th>
+                                <th style={{ width: '20%' }}>Saldo anterior</th>
+                                <th style={{ width: '20%' }}>Debe</th>
+                                <th style={{ width: '20%' }}>Haber</th>
+                                <th style={{ width: '20%' }}>Saldo actual</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Totales:</td>
+                                <td>{numeral(pageData.totales.saldoAnterior).format('0,0.00')}</td>
+                                <td>{numeral(pageData.totales.debe).format('0,0.00')}</td>
+                                <td>{numeral(pageData.totales.haber).format('0,0.00')}</td>
+                                <td>{numeral(pageData.totales.saldoActual).format('0,0.00')}</td>
+                            </tr>
+                        </tbody>
+                    </Table>
+                </Col>
+                <Col />
+            </Row>
         </>
     )
 }
 
-Movimientos.propTypes = {
-    selectedCuentaContable: PropTypes.object.isRequired, 
-    mes: PropTypes.string, 
-    ano: PropTypes.string, 
-    centrosCosto: PropTypes.PropTypes.number,
-    cc: PropTypes.PropTypes.array,
-    ciaContabId: PropTypes.number, 
+CuentasContables.propTypes = {
+    filtrosLoading: PropTypes.bool.isRequired,
+    ciaContabId: PropTypes.number,
     setMessage: PropTypes.func.isRequired,
-    setShowSpinner: PropTypes.func.isRequired, 
-    setCurrentTab: PropTypes.func.isRequired, 
-    setSelectedAsientoContable: PropTypes.func.isRequired 
+    setShowSpinner: PropTypes.func.isRequired,
+    setCurrentTab: PropTypes.func.isRequired,
+    filtro: PropTypes.object.isRequired, 
+    setTransformarGridData: PropTypes.func.isRequired
 };
 
-export default Movimientos; 
+export default CuentasContables;

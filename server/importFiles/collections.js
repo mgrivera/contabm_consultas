@@ -3,3 +3,4 @@
 import '/imports/collections/filtros';
 import '/imports/collections/companias'; 
 import '/imports/collections/companiaSeleccionada'; 
+import '/imports/sequelize/sqlModels/parametrosContab'; 

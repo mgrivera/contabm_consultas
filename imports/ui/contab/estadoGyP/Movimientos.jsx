@@ -3,7 +3,7 @@ import { Meteor } from 'meteor/meteor';
 
 import numeral from 'numeral';
 
-import React, { useState, useEffect } from 'react'; 
+import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 
 import { Row, Col } from 'react-bootstrap';
@@ -15,18 +15,18 @@ import './react_data_grid.css';
 const reactDataGridNumberFormatter = ({ value }) => numeral(value).format('0,0.00');
 
 const columns = [
-    { key: 'fecha', name: 'Fecha', resizable: true, sortable: true, frozen: false, cellClass: 'text-center', width: 120 }, 
+    { key: 'fecha', name: 'Fecha', resizable: true, sortable: true, frozen: false, cellClass: 'text-center', width: 120 },
     { key: 'comprobante', name: 'Comp', resizable: true, sortable: true, frozen: false, cellClass: 'text-center', width: 80 },
     { key: 'partida', name: '##', resizable: true, sortable: true, frozen: false, cellClass: 'text-center', width: 60 },
+    { key: 'cuentaContableEditada', name: 'Cuenta', resizable: true, sortable: true, frozen: false, width: 120 },
     { key: 'descripcion', name: 'Descripción', resizable: true, sortable: true, frozen: false, width: 200 },
     { key: 'referencia', name: 'Referencia', resizable: true, sortable: true, frozen: false, width: 120 },
     { key: 'debe', name: 'Debe', resizable: true, sortable: true, formatter: reactDataGridNumberFormatter, frozen: false, cellClass: 'text-right', width: 150 },
     { key: 'haber', name: 'Haber', resizable: true, sortable: true, formatter: reactDataGridNumberFormatter, frozen: false, cellClass: 'text-right', width: 150 },
-    { key: 'factorCambio', name: 'F cambio', resizable: true, sortable: true, formatter: reactDataGridNumberFormatter, frozen: false, cellClass: 'text-right', width: 150 }, 
-    { key: 'centroCosto', name: 'Centro costo', resizable: true, sortable: true, frozen: false, width: 220 }
+    { key: 'factorCambio', name: 'F cambio', resizable: true, sortable: true, formatter: reactDataGridNumberFormatter, frozen: false, cellClass: 'text-right', width: 150 }
 ];
 
-const Movimientos = ({ selectedCuentaContable, mes, ano, centrosCosto, cc, ciaContabId, setMessage, setShowSpinner, setCurrentTab, setSelectedAsientoContable }) => {
+const Movimientos = ({ selectedCuentaContable, mes, ano, ciaContabId, setMessage, setShowSpinner }) => {
 
     const [pageData, setPageData] = useState({
         page: 1,
@@ -42,8 +42,8 @@ const Movimientos = ({ selectedCuentaContable, mes, ano, centrosCosto, cc, ciaCo
     // --------------------------------------------------------------------------------
     // para leer la cantidad de registros 
     useEffect(() => {
-        if (!selectedCuentaContable?.cuentaId) {
-            return; 
+        if (!selectedCuentaContable?.cuentaContableEditada) {
+            return;
         }
 
         setShowSpinner(true);
@@ -58,30 +58,32 @@ const Movimientos = ({ selectedCuentaContable, mes, ano, centrosCosto, cc, ciaCo
             loadingRecordCount: true,
             loadingPage: false,
             items: []
-        }; 
+        };
 
-        setPageData(state); 
+        setPageData(state);
+
+        // desde Transformar viene la cuentaContableEditada; la convertimos a cuenta normal, para buscar en sql server 
+        const cuentaContable = selectedCuentaContable.cuentaContableEditada.replace(/\s/g, ''); 
 
         // determinamos la cantidad de registros que regresará la consulta 
-        Meteor.call('movimientoDeCuentasContables.leerMovimientos.recordCount', selectedCuentaContable.cuentaId, 
-                                                                                mes, 
-                                                                                ano, 
-                                                                                centrosCosto, cc, 
-                                                                                selectedCuentaContable.monedaId, 
-                                                                                ciaContabId, (err, result) => {
+        Meteor.call('estadoGyP.leerMovimientos.recordCount', cuentaContable,
+            mes,
+            ano,
+            selectedCuentaContable.monedaId,
+            ciaContabId, (err, result) => {
 
-            const recordCount = result.recCount;
-            const recsPerPage = pageData.recsPerPage;
+                const recordCount = result.recCount;
+                const recsPerPage = pageData.recsPerPage;
 
-            // calculamos la cantidad máxima de páginas y pasamos como un prop 
-            let cantPages = Math.floor(recordCount / recsPerPage);
-            cantPages = (recordCount % recsPerPage) ? cantPages + 1 : cantPages; // si hay un resto, agregamos 1 página 
+                // calculamos la cantidad máxima de páginas y pasamos como un prop 
+                let cantPages = Math.floor(recordCount / recsPerPage);
+                cantPages = (recordCount % recsPerPage) ? cantPages + 1 : cantPages; // si hay un resto, agregamos 1 página 
 
-            setPageData((prevState) => ({ ...prevState, recordCount, cantPages, loadingRecordCount: false, loadingPage: true }));
-            setShowSpinner(false); 
-        })
+                setPageData((prevState) => ({ ...prevState, recordCount, cantPages, loadingRecordCount: false, loadingPage: true }));
+                setShowSpinner(false);
+            })
 
-    }, [ selectedCuentaContable?.cuentaId, mes, ano, selectedCuentaContable?.monedaId, ciaContabId ])
+    }, [selectedCuentaContable?.cuentaContableEditada, mes, ano, selectedCuentaContable?.monedaId, ciaContabId])
 
     // --------------------------------------------------------------------------------
     // para leer los registros 
@@ -94,14 +96,17 @@ const Movimientos = ({ selectedCuentaContable, mes, ano, centrosCosto, cc, ciaCo
 
         setShowSpinner(true);
 
+        // desde Transformar viene la cuentaContableEditada; la convertimos a cuenta normal, para buscar en sql server 
+        const cuentaContable = selectedCuentaContable.cuentaContableEditada.replace(/\s/g, '');
+
         // cada vez que el usuario quiere una nueva página, o cuando tenemos la cantidad de registros (1ra vez), leemos el db
-        Meteor.call('movimientoDeCuentasContables.leerMovimientos', pageData.page,
-                                                                    pageData.recsPerPage,
-                                                                    pageData.recordCount,
-                                                                    pageData.leerResto,
-                                                                    selectedCuentaContable.cuentaId, 
-                                                                    mes, ano, centrosCosto, cc, selectedCuentaContable.monedaId, 
-                                                                    ciaContabId, (err, result) => {
+        Meteor.call('estadoGyP.leerMovimientos', pageData.page,
+            pageData.recsPerPage,
+            pageData.recordCount,
+            pageData.leerResto,
+            cuentaContable,
+            mes, ano, selectedCuentaContable.monedaId,
+            ciaContabId, (err, result) => {
 
                 if (err) {
                     const msg = {
@@ -143,18 +148,6 @@ const Movimientos = ({ selectedCuentaContable, mes, ano, centrosCosto, cc, ciaCo
                 // recuperamos el index mayor; la 1ra vez, cuando no haya items, el index será siempre 0  
                 let maxIndex = items.reduce((acum, current) => (current.idx >= acum ? current.idx : acum), -1);
 
-                // agregamos el centro de costo, en base a los datos que regresan desde la ejecución del method 
-                result.items.forEach(x => {
-                    x.centroCosto = ""; 
-                    if (x.nombreCentroCosto) { 
-                        x.centroCosto = `${x.nombreCentroCosto} - ${x.nombreCortoCentroCosto}`; 
-
-                        if (x.suspendidoCentroCosto) { 
-                            x.centroCosto += " (susp)"; 
-                        }
-                    }
-                })
-
                 result.items.forEach(x => items.push({ idx: ++maxIndex, ...x }));
                 // ----------------------------------------------------------------------------------------------------------
 
@@ -192,20 +185,6 @@ const Movimientos = ({ selectedCuentaContable, mes, ano, centrosCosto, cc, ciaCo
         return [...initialRows].sort(comparer);
     };
 
-    const onCuentasRowClick = (index) => {
-
-        if (index === -1) { 
-            // el index es igual a -1 cuando el usuario hace un click en el header row
-            return; 
-        }
-
-        const row = pageData.items[index];
-        setSelectedAsientoContable(row);
-
-        // para ir a tab Movimientos 
-        setCurrentTab("asiento");
-    }
-
     const masRegistros = () => {
         if (pageData.page < pageData.cantPages) {
             const page = pageData.page + 1;
@@ -230,13 +209,13 @@ const Movimientos = ({ selectedCuentaContable, mes, ano, centrosCosto, cc, ciaCo
                     {(selectedCuentaContable && selectedCuentaContable.cuenta && selectedCuentaContable.nombreCuenta) &&
                         <p>
                             <b>Movimientos para la cuenta contable:
-                            {` ${selectedCuentaContable.cuenta} ${selectedCuentaContable.nombreCuenta}, `}
-                            {`el mes ${mes}/${ano} y la moneda ${selectedCuentaContable.simboloMoneda}`}</b>
+                                {` ${selectedCuentaContable.cuenta} ${selectedCuentaContable.nombreCuenta}, `}
+                                {`el mes ${mes}/${ano} y la moneda ${selectedCuentaContable.simboloMoneda}`}</b>
                         </p>
                     }
 
                     <p>
-                        Haga un <em>click</em> en algún movimiento, para leer y mostrar el asiento contable, y sus anexos, si existen.
+                        Movimientos contables (asientos) para la cuenta contable seleccionada 
                     </p>
                 </Col>
             </Row>
@@ -264,7 +243,6 @@ const Movimientos = ({ selectedCuentaContable, mes, ano, centrosCosto, cc, ciaCo
                             rowGetter={i => pageData.items[i]}
                             rowsCount={pageData.items.length}
                             minHeight={400}
-                            onRowClick={onCuentasRowClick}
                             onGridSort={(sortColumn, sortDirection) => handleGridSort(sortColumn, sortDirection)}
                         />
                     </div>
@@ -275,16 +253,12 @@ const Movimientos = ({ selectedCuentaContable, mes, ano, centrosCosto, cc, ciaCo
 }
 
 Movimientos.propTypes = {
-    selectedCuentaContable: PropTypes.object.isRequired, 
-    mes: PropTypes.string, 
-    ano: PropTypes.string, 
-    centrosCosto: PropTypes.PropTypes.number,
-    cc: PropTypes.PropTypes.array,
-    ciaContabId: PropTypes.number, 
+    selectedCuentaContable: PropTypes.object.isRequired,
+    mes: PropTypes.string,
+    ano: PropTypes.string,
+    ciaContabId: PropTypes.number,
     setMessage: PropTypes.func.isRequired,
-    setShowSpinner: PropTypes.func.isRequired, 
-    setCurrentTab: PropTypes.func.isRequired, 
-    setSelectedAsientoContable: PropTypes.func.isRequired 
+    setShowSpinner: PropTypes.func.isRequired
 };
 
-export default Movimientos; 
+export default Movimientos;

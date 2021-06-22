@@ -16,23 +16,24 @@ import { Filtros } from '/imports/collections/filtros';
 import Message from '/imports/ui/genericReactComponents/Message';
 import Spinner from '/imports/ui/genericReactComponents/Spinner';
 
-import CuentasContables from './CuentasContables'; 
+import CuentasContables from './CuentasContables';
 import Movimientos from './Movimientos';
-import AsientoContable from './AsientoContable';
-import Anexos from './Anexos'; 
+import Transformar from './Transformar'; 
 
 const List = ({ companiaContabSeleccionada }) => {
 
     const { url } = useRouteMatch();
-    const [filtro, setFiltro] = useState({}); 
+    const [filtro, setFiltro] = useState({});
 
     const [showSpinner, setShowSpinner] = useState(false);
     const [message, setMessage] = useState({ type: '', message: '', show: false });
 
     const [currentTab, setCurrentTab] = useState('cuentas');
-    
+
     const [selectedCuentaContable, setSelectedCuentaContable] = useState({});
-    const [selectedAsientoContable, setSelectedAsientoContable] = useState({});
+
+    // este es el array para el grid que está en el tab Transformar; el array se inicializa en el tab (component) CuentasContables 
+    const [transformarGridData, setTransformarGridData] = useState([]); 
 
     const regresarAlFiltro = () => {
         // para ir al route '.../filter' cuando el usuario hace un click en Regresar 
@@ -51,7 +52,7 @@ const List = ({ companiaContabSeleccionada }) => {
     // para ejecutar el sub 'filtros' 
     const filtrosLoading = useTracker(() => {
         // Note that this subscription will get cleaned up when your component is unmounted or deps change.
-        const handle = Meteor.subscribe('filtros', Meteor.userId(), "consultas_movimientoDeCuentasContables");
+        const handle = Meteor.subscribe('filtros', Meteor.userId(), "consultas_estadoGyP");
         return !handle.ready();
     }, []);
 
@@ -63,16 +64,16 @@ const List = ({ companiaContabSeleccionada }) => {
             return;
         }
 
-        const filtroExiste = Filtros.find({ nombre: 'consultas_movimientoDeCuentasContables', userId: Meteor.userId() }).count();
+        const filtroExiste = Filtros.find({ nombre: 'consultas_estadoGyP', userId: Meteor.userId() }).count();
 
         if (filtroExiste) {
-            const filtro = Filtros.findOne({ nombre: 'consultas_movimientoDeCuentasContables', userId: Meteor.userId() });
+            const filtro = Filtros.findOne({ nombre: 'consultas_estadoGyP', userId: Meteor.userId() });
             setFiltro(filtro.filtro);
         }
     }, [filtrosLoading])
 
     const loading = filtrosLoading || showSpinner;
-    
+
     return (
         <>
             <Navbar bg="dark" variant="dark" style={{ marginRight: '-15px', marginLeft: '-15px', fontSize: '14px', maxHeight: '30px' }}>
@@ -89,43 +90,37 @@ const List = ({ companiaContabSeleccionada }) => {
                     {message.show && <Message message={message} setMessage={setMessage} />}
                 </Col>
             </Row>
-            
+
             <Tabs
                 id="movimientoDeCuentasContablesTab"
                 activeKey={currentTab}
                 onSelect={(k) => setCurrentTab(k)}
             >
                 <Tab eventKey="cuentas" title="Cuentas">
-                    <CuentasContables filtrosLoading = {filtrosLoading} 
-                                      companiaContabSeleccionada = {companiaContabSeleccionada} 
-                                      setMessage={setMessage} 
-                                      setShowSpinner={setShowSpinner} 
-                                      setCurrentTab={setCurrentTab} 
-                                      setSelectedCuentaContable={setSelectedCuentaContable} 
-                                      filtro={filtro} />
+                    <CuentasContables filtrosLoading={filtrosLoading}
+                        ciaContabId={companiaContabSeleccionada.numero_sql}
+                        setMessage={setMessage}
+                        setShowSpinner={setShowSpinner}
+                        setCurrentTab={setCurrentTab}
+                        filtro={filtro} 
+                        setTransformarGridData={setTransformarGridData} />
+                </Tab>
+                <Tab eventKey="transformar" title="Transformar">
+                    <Transformar transformarGridData={transformarGridData} 
+                                 setTransformarGridData={setTransformarGridData}
+                                 setMessage={setMessage}
+                                 setShowSpinner={setShowSpinner}
+                                 setCurrentTab={setCurrentTab}
+                                 setSelectedCuentaContable={setSelectedCuentaContable} 
+                                 ciaContabId={companiaContabSeleccionada.numero_sql}/>
                 </Tab>
                 <Tab eventKey="movimientos" title="Movimientos">
                     <Movimientos selectedCuentaContable={selectedCuentaContable}
-                                 mes={filtro.mes} 
-                                 ano={filtro.ano} 
-                                 centrosCosto={filtro.centrosCosto}
-                                 cc={filtro.cc}
-                                 ciaContabId={companiaContabSeleccionada.numero_sql} 
-                                 setMessage={setMessage}
-                                 setShowSpinner={setShowSpinner} 
-                                 setCurrentTab={setCurrentTab} 
-                                 setSelectedAsientoContable={setSelectedAsientoContable} />
-                </Tab>
-                <Tab eventKey="asiento" title="Asiento">
-                    <AsientoContable asientoId={selectedAsientoContable.asientoId} 
-                                     setMessage={setMessage}
-                                     showSpinner={showSpinner}
-                                     setShowSpinner={setShowSpinner} />
-                </Tab>
-                <Tab eventKey="anexos" title="Anexos">
-                    <Anexos asientoId={selectedAsientoContable.asientoId}
-                            setMessage={setMessage}
-                            setShowSpinner={setShowSpinner} />
+                        mes={filtro.mes}
+                        ano={filtro.ano}
+                        ciaContabId={companiaContabSeleccionada.numero_sql}
+                        setMessage={setMessage}
+                        setShowSpinner={setShowSpinner} />
                 </Tab>
             </Tabs>
         </>

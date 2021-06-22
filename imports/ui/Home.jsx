@@ -28,6 +28,10 @@ const Home = () => {
                                 <Link className='text-link-menu' to="/contab/movimientoCuentasContables">
                                     <span style={{ padding: '10px' }}>Movimiento de cuentas contables</span>
                                 </Link><br />
+
+                                <Link className='text-link-menu' to="/contab/estadoGyP">
+                                    <span style={{ padding: '10px' }}>Estado de ganancias y pérdidas (GyP)</span>
+                                </Link><br />
                                 
                                 <NavDropdown.Divider />
 

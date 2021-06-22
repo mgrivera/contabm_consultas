@@ -9,6 +9,7 @@ import CierresContables from './contab/cierresContables/CierresContables';
 import EmailVerificationMessage from './generales/meteorLogin/EmailVerificationMessage';
 import ResetUserPassword from './generales/meteorLogin/ResetUserPassword';
 import MovimientoDeCuentasContables from "./contab/movimientoDeCuentasContables/MovimientoDeCuentasContables";
+import EstadoGyP from "./contab/estadoGyP/EstadoGyP"; 
 
 export default function App() {
     return (
@@ -16,6 +17,7 @@ export default function App() {
             <Switch>
                 <Route path="/contab/movimientoCuentasContables"><MovimientoDeCuentasContables /></Route>
                 <Route path="/contab/cuentasYSusMovimientos"><Contab_CuentasYSusMovimientos /></Route>
+                <Route path="/contab/estadoGyP"><EstadoGyP /></Route>
                 <Route path="/contab/cierresContables"><CierresContables /></Route>
 
                 <Route path="/generales/seleccionarUnaCompaniaContab"><SeleccionarCompaniaContab /></Route>

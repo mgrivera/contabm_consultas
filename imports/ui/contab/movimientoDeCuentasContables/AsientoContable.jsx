@@ -23,6 +23,7 @@ const columns = [
     { key: 'referencia', name: 'Referencia', resizable: true, sortable: true, frozen: false, width: 100 },
     { key: 'debe', name: 'Debe', resizable: true, sortable: true, formatter: reactDataGridNumberFormatter, frozen: false, cellClass: 'text-right', width: 150 },
     { key: 'haber', name: 'Haber', resizable: true, sortable: true, formatter: reactDataGridNumberFormatter, frozen: false, cellClass: 'text-right', width: 150 },
+    { key: 'centroCosto', name: 'Centro costo', resizable: true, sortable: true, frozen: false, width: 220 }
 ];
 
 const Movimientos = ({ asientoId, setMessage, showSpinner, setShowSpinner }) => {
@@ -177,6 +178,18 @@ const Movimientos = ({ asientoId, setMessage, showSpinner, setShowSpinner }) => 
 
             // recuperamos el index mayor; la 1ra vez, cuando no haya items, el index será siempre 0  
             let maxIndex = items.reduce((acum, current) => (current.idx >= acum ? current.idx : acum), -1);
+
+            // agregamos el centro de costo, en base a los datos que regresan desde la ejecución del method 
+            result.items.forEach(x => {
+                x.centroCosto = "";
+                if (x.nombreCentroCosto) {
+                    x.centroCosto = `${x.nombreCentroCosto} - ${x.nombreCortoCentroCosto}`;
+
+                    if (x.suspendidoCentroCosto) {
+                        x.centroCosto += " (susp)";
+                    }
+                }
+            })
 
             result.items.forEach(x => items.push({ idx: ++maxIndex, ...x }));
             // ----------------------------------------------------------------------------------------------------------

@@ -32,6 +32,7 @@ Meteor.methods(
 
             const cuentasContables = filtro.cuentas ? filtro.cuentas : []; 
             const monedas = filtro.monedas ? filtro.monedas : []; 
+            const cc = filtro.cc ? filtro.cc : []; 
 
             // preparamos un filtro para los valores que vienen en listas (monedas y cuentas contables)
             let filtroMonedasYCuentas = "(1 = 1)"; 
@@ -50,6 +51,65 @@ Meteor.methods(
                 monedas.forEach(x => filtroMonedasYCuentas += `${x.value.toString()}, `);
 
                 filtroMonedasYCuentas += "-999)";
+            }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+            // preparamos un filtro para los valores que vienen en la lista de centros de costo 
+            let filtroListaCC = "(1 = 1)";
+
+            if (cc.length) {
+                filtroListaCC += " And d.CentroCosto In (";
+
+                cc.forEach(x => filtroListaCC += `${x.value.toString()}, `);
+
+                filtroListaCC += "-999)";
+            }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+            // el usuario puede indicar si desea solo movimientos: con/sin centros de costo asociado 
+            let filtroCentrosCosto = "(1 = 1)";
+
+            if (filtro.centrosCosto) {
+                if (filtro.centrosCosto === 1) {
+                    filtroCentrosCosto += " And (d.CentroCosto Is Not Null)";
+                } else if (filtro.centrosCosto === 2) {
+                    filtroCentrosCosto += " And (d.CentroCosto Is Null)";
+                }
             }
 
             // offset son los registros *ya* leídos; por ejemplo: si la página es de 25 y se han leído 3 páginas, el offset es 75 
@@ -84,7 +144,8 @@ Meteor.methods(
                             Inner Join dAsientos d On d.CuentaContableID = c.ID
                             Inner Join Asientos a On d.NumeroAutomatico = a.NumeroAutomatico
                             Inner Join Monedas m On a.Moneda = m.Moneda
-                            Where a.Ano = :ano And a.Mes = :mes And a.Cia = :ciaContab And ${filtroMonedasYCuentas}
+                            Where a.Ano = :ano And a.Mes = :mes And a.Cia = :ciaContab And ${filtroMonedasYCuentas} And ${filtroCentrosCosto}
+                            And ${filtroListaCC}  
                             Group By m.Moneda, m.Simbolo, c.ID, c.Cuenta, c.Descripcion
                             Order By c.Cuenta
                             Offset :offset Rows Fetch Next :limit Rows Only
@@ -203,6 +264,7 @@ Meteor.methods(
 
             const cuentasContables = filtro.cuentas ? filtro.cuentas : [];
             const monedas = filtro.monedas ? filtro.monedas : [];
+            const cc = filtro.cc ? filtro.cc : [];
 
             // preparamos un filtro para los valores que vienen en listas (monedas y cuentas contables)
             let filtroMonedasYCuentas = "(1 = 1)";
@@ -223,12 +285,51 @@ Meteor.methods(
                 filtroMonedasYCuentas += "-999)";
             }
 
+
+
+
+
+
+
+
+
+            // preparamos un filtro para los valores que vienen en la lista de centros de costo 
+            let filtroListaCC = "(1 = 1)";
+
+            if (cc.length) {
+                filtroListaCC += " And d.CentroCosto In (";
+
+                cc.forEach(x => filtroListaCC += `${x.value.toString()}, `);
+
+                filtroListaCC += "-999)";
+            }
+
+
+
+
+
+
+
+
+
+            // el usuario puede indicar si desea solo movimientos: con/sin centros de costo asociado 
+            let filtroCentrosCosto = "(1 = 1)"; 
+
+            if (filtro.centrosCosto) { 
+                if (filtro.centrosCosto === 1) { 
+                    filtroCentrosCosto += " And (d.CentroCosto Is Not Null)";
+                } else if (filtro.centrosCosto === 2) { 
+                    filtroCentrosCosto += " And (d.CentroCosto Is Null)";
+                }
+            }
+
             const query = `Select Count(*) as count 
                             From CuentasContables c
                             Inner Join dAsientos d On d.CuentaContableID = c.ID
                             Inner Join Asientos a On d.NumeroAutomatico = a.NumeroAutomatico
                             Inner Join Monedas m On a.Moneda = m.Moneda
-                            Where a.Ano = :ano And a.Mes = :mes And a.Cia = :ciaContab And ${filtroMonedasYCuentas}
+                            Where a.Ano = :ano And a.Mes = :mes And a.Cia = :ciaContab And ${filtroMonedasYCuentas} And ${filtroCentrosCosto} 
+                            And ${filtroListaCC} 
                             Group By m.Simbolo, c.Cuenta, c.Descripcion
             `
             let response = [];
@@ -263,21 +364,44 @@ Meteor.methods(
         // --------------------------------------------------------------------------------
         // movimientoDeCuentasContables - leerMovimientos - leer recordCount  
         // --------------------------------------------------------------------------------
-        'movimientoDeCuentasContables.leerMovimientos.recordCount': async function (cuentaId, mes, ano, monedaId, ciaContabId) {
+        'movimientoDeCuentasContables.leerMovimientos.recordCount': async function (cuentaId, mes, ano, centrosCosto, cc, monedaId, ciaContabId) {
 
             check(cuentaId, Match.Integer);
             check(mes, String);
             check(ano, String);
+            check(centrosCosto, Match.Integer);
             check(monedaId, Match.Integer);
             check(ciaContabId, Match.Integer);
 
             mes = parseInt(mes); 
             ano = parseInt(ano); 
 
+            // el usuario puede indicar si desea solo movimientos: con/sin centros de costo asociado 
+            let filtroCentrosCosto = "(1 = 1)";
+
+            if (centrosCosto) {
+                if (centrosCosto === 1) {
+                    filtroCentrosCosto += " And (d.CentroCosto Is Not Null)";
+                } else if (centrosCosto === 2) {
+                    filtroCentrosCosto += " And (d.CentroCosto Is Null)";
+                }
+            }
+
+            // preparamos un filtro para los valores que vienen en la lista de centros de costo 
+            let filtroListaCC = "(1 = 1)";
+
+            if (cc.length) {
+                filtroListaCC += " And d.CentroCosto In (";
+
+                cc.forEach(x => filtroListaCC += `${x.value.toString()}, `);
+
+                filtroListaCC += "-999)";
+            }
+
             const query = `Select Count(*) as count
                            From dAsientos d Inner Join Asientos a On d.NumeroAutomatico = a.NumeroAutomatico
                            Where d.CuentaContableID = :cuentaId And a.Mes = :mes And a.Ano = :ano And 
-                           a.Moneda = :monedaId And a.Cia = :ciaContabId
+                           a.Moneda = :monedaId And a.Cia = :ciaContabId And ${filtroCentrosCosto} And ${filtroListaCC} 
             `
             let response = [];
 
@@ -312,7 +436,7 @@ Meteor.methods(
         // movimientoDeCuentasContables - leerCuentasYMovimientos 
         // --------------------------------------------------------------------------------
         'movimientoDeCuentasContables.leerMovimientos': async function (page, recsPerPage, recordCount, leerResto, 
-                                                                        cuentaId, mes, ano, monedaId, ciaContabId) {
+                                                                        cuentaId, mes, ano, centrosCosto, cc, monedaId, ciaContabId) {
 
             check(page, Match.Integer);
             check(recsPerPage, Match.Integer);
@@ -322,6 +446,7 @@ Meteor.methods(
             check(cuentaId, Match.Integer);
             check(mes, String);
             check(ano, String);
+            check(centrosCosto, Match.Integer);
             check(monedaId, Match.Integer);
             check(ciaContabId, Match.Integer);
 
@@ -353,13 +478,38 @@ Meteor.methods(
 
             limit = (limit <= 0) ? 1 : limit;      // Fetch debe ser siempre mayor que 0 en el Select 
 
+            // preparamos un filtro para los valores que vienen en la lista de centros de costo 
+            let filtroListaCC = "(1 = 1)";
+
+            if (cc.length) {
+                filtroListaCC += " And d.CentroCosto In (";
+
+                cc.forEach(x => filtroListaCC += `${x.value.toString()}, `);
+
+                filtroListaCC += "-999)";
+            }
+
+            // el usuario puede indicar si desea solo movimientos: con/sin centros de costo asociado 
+            let filtroCentrosCosto = "(1 = 1)";
+
+            if (centrosCosto) {
+                if (centrosCosto === 1) {
+                    filtroCentrosCosto += " And (d.CentroCosto Is Not Null)";
+                } else if (centrosCosto === 2) {
+                    filtroCentrosCosto += " And (d.CentroCosto Is Null)";
+                }
+            }
+
             const query = `Select a.NumeroAutomatico as asientoId, FORMAT(a.Fecha, 'dd-MMM-yyyy') as fecha, 
                            a.Numero as comprobante, 
                            d.Partida as partida, d.Descripcion as descripcion,
-                           d.Referencia as referencia, d.Debe as debe, d.Haber as haber, a.FactorDeCambio as factorCambio
+                           d.Referencia as referencia, d.Debe as debe, d.Haber as haber, a.FactorDeCambio as factorCambio, 
+                           cc.Descripcion as nombreCentroCosto, cc.DescripcionCorta as nombreCortoCentroCosto, 
+                           cc.Suspendido as suspendidoCentroCosto 
                            From dAsientos d Inner Join Asientos a On d.NumeroAutomatico = a.NumeroAutomatico
+                           Left Outer Join CentrosCosto cc On d.CentroCosto = cc.CentroCosto 
                            Where d.CuentaContableID = :cuentaId And a.Mes = :mes And a.Ano = :ano And
-                           a.Moneda = :monedaId And a.Cia = :ciaContabId 
+                           a.Moneda = :monedaId And a.Cia = :ciaContabId And ${filtroCentrosCosto} And ${filtroListaCC} 
                            Order By a.Fecha, a.Numero, d.Partida 
                            Offset :offset Rows Fetch Next :limit Rows Only
             `
@@ -471,8 +621,11 @@ Meteor.methods(
             limit = (limit <= 0) ? 1 : limit;      // Fetch debe ser siempre mayor que 0 en el Select 
 
             const query = `Select d.Partida as partida, c.Cuenta as cuentaContable, c.Descripcion as nombreCuentaContable,
-                           d.Descripcion as descripcion, d.Referencia as referencia, d.Debe as debe, d.Haber as haber
-                           From dAsientos d Inner Join CuentasContables c On d.CuentaContableID = c.ID
+                           d.Descripcion as descripcion, d.Referencia as referencia, d.Debe as debe, d.Haber as haber, 
+                           cc.Descripcion as nombreCentroCosto, cc.DescripcionCorta as nombreCortoCentroCosto,
+                           cc.Suspendido as suspendidoCentroCosto 
+                           From dAsientos d Inner Join CuentasContables c On d.CuentaContableID = c.ID 
+                           Left Outer Join CentrosCosto cc on d.CentroCosto = cc.CentroCosto 
                            Where d.NumeroAutomatico = :asientoId
                            Order By d.Partida 
                            Offset :offset Rows Fetch Next :limit Rows Only

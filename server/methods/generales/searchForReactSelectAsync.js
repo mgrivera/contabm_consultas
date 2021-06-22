@@ -99,5 +99,49 @@ Meteor.methods(
                 error: false,
                 options: response
             }
-        }
+        }, 
+
+        // --------------------------------------------------------------------------------
+        // searchCentrosCosto 
+        // --------------------------------------------------------------------------------
+        'reactSelectAsync.centrosCosto': async function (search) {
+
+            check(search, String);
+
+            // tal y como ejecutamos el Select, cuando *no* hay un valor en search, leemos *todos* los registros 
+            search = search ? search : '!!!!!!';
+
+            const query = `Select CentroCosto as value,  
+                           (Descripcion + ' - ' + DescripcionCorta + Case When Suspendido = 1 Then ' (Susp)' Else '' End) as label
+                            From CentrosCosto
+                            Where (Descripcion Like '%${search}%' Or DescripcionCorta Like '%${search}%')
+                            Order By Descripcion
+            `
+            let response = [];
+
+            try {
+                response = await sequelize.query(query, {
+                    type: sequelize.QueryTypes.SELECT
+                });
+            } catch (err) {
+                throw new Meteor.Error(err);
+            }
+
+            if (!response || !Array.isArray(response)) {
+                const message = `Error inesperado: hemos obtenido un error al intentar leer los centros de costo desde la base de datos, 
+                                 para regresar una lista para que el usuario pueda seleccionar uno. <br />
+                                 Por favor revise.<br />
+                                 `;
+
+                return {
+                    error: true,
+                    message
+                }
+            }
+
+            return {
+                error: false,
+                options: response
+            }
+        },
     })
