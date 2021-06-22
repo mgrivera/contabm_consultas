@@ -3,10 +3,7 @@ import { Meteor } from 'meteor/meteor'
 import { check } from 'meteor/check'
 import { Match } from 'meteor/check'
 
-import moment from 'moment';
-
 import { sequelize } from '/imports/sequelize/sequelize';
-import { TimeOffset } from '/imports/sequelize/sequelize';
 
 import { determinarMesFiscal } from '/server/ContabFunctions/determinarMesFiscal';
 import { nombreMesFiscalTablaSaldos } from '/server/ContabFunctions/nombreMesFiscalTablaSaldos';
@@ -26,6 +23,7 @@ Meteor.methods(
             check(filtro, Object);
             check(ciaContabSeleccionada, Match.Integer);
 
+            const mes = parseInt(filtro.mes);
             const ano = parseInt(filtro.ano);
 
             const monedas = filtro.monedas ? filtro.monedas : [];
@@ -50,17 +48,26 @@ Meteor.methods(
                 }
             }
 
+            // ---------------------------------------------------------------------------------------------------------------
+            // determinamos el mes y año fiscal y el nombre de la columna en la tabla saldosContables que corresponde 
+            // al saldo anterior. Por ejemplo, si el mes es 01, el nombre de la columna es 'Inicial' 
+            const fecha = new Date(ano, (mes - 1), 1);      // recuérdese que para Date el mes es 0 based 
+            const result = await determinarMesFiscal(fecha, ciaContabSeleccionada);
+
+            const { anoFiscal } = result;
+
             const query = `Select Count(*) as count 
                             From SaldosContables s Inner Join Monedas m On s.Moneda = m.Moneda
                             Inner Join CuentasContables c On s.CuentaContableID = c.ID
-                            Where Ano = :ano And s.Cia = :ciaContabId And ${filtroMonedas} And ${filtroCuentasNominales.filtro} 
+                            Where s.Ano = :anoFiscal And s.Cia = :ciaContabId And ${filtroMonedas} And ${filtroCuentasNominales.filtro} 
+                            And c.TotDet = 'D' 
                             Group by c.Cuenta, s.Moneda, s.Ano
             `
             let response = [];
 
             try {
                 response = await sequelize.query(query, {
-                    replacements: { ano, ciaContabId: ciaContabSeleccionada },
+                    replacements: { anoFiscal, ciaContabId: ciaContabSeleccionada },
                     type: sequelize.QueryTypes.SELECT
                 });
             } catch (err) {
@@ -170,7 +177,8 @@ Meteor.methods(
                             s.CuentaContableID as cuentaId, s.Ano as ano, Sum(${nombreColumnaTablaSaldos}) as saldoAnterior
                             From SaldosContables s Inner Join Monedas m On s.Moneda = m.Moneda
                             Inner Join CuentasContables c On s.CuentaContableID = c.ID
-                            Where Ano = :ano And s.Cia = :ciaContabId And ${filtroMonedas} And ${filtroCuentasNominales.filtro} 
+                            Where s.Ano = :anoFiscal And s.Cia = :ciaContabId And ${filtroMonedas} And ${filtroCuentasNominales.filtro}
+                            And c.TotDet = 'D' 
                             Group by m.Moneda, m.Simbolo, c.Cuenta, c.CuentaEditada, c.Descripcion, s.CuentaContableID, s.Ano
                             Order By c.Cuenta
                             Offset :offset Rows Fetch Next :limit Rows Only
@@ -179,7 +187,7 @@ Meteor.methods(
 
             try {
                 items = await sequelize.query(query, {
-                    replacements: { ano: anoFiscal, ciaContabId: ciaContabSeleccionada, offset, limit },
+                    replacements: { anoFiscal, ciaContabId: ciaContabSeleccionada, offset, limit },
                     type: sequelize.QueryTypes.SELECT
                 });
             } catch (err) {
@@ -213,11 +221,13 @@ Meteor.methods(
             items.forEach(x => filtroCuentasContablesNominales += `, ${x.cuentaId.toString()}`);
             filtroCuentasContablesNominales += ")";
 
+            const filtroMonedas2 = filtroMonedas.replace("m.Moneda", "a.Moneda") 
+
             const query2 = `Select d.CuentaContableID as cuentaId, 
                             Sum(d.Debe) as sumOfDebe, Sum(d.Haber) as sumOfHaber, Count(*) as count
                             From dAsientos d Inner Join Asientos a On d.NumeroAutomatico = a.NumeroAutomatico
                             Where a.Mes = :mes And a.Ano = :ano And a.Cia = :ciaContabId
-                            And d.CuentaContableID In ${filtroCuentasContablesNominales}
+                            And d.CuentaContableID In ${filtroCuentasContablesNominales} And ${filtroMonedas2} 
                             Group By d.CuentaContableID
                            `
             let montosArray = [];

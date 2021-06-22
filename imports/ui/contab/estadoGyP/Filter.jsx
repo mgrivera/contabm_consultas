@@ -252,64 +252,6 @@ const Filter = () => {
                     <Col sm={1} />
                 </Row>
 
-                <Row style={{ marginTop: '10px' }}>
-                    <Col sm={1} />
-                    <Col>
-                        <fieldset className="border p-2">
-                            <legend style={{ paddingLeft: '10px', paddingRight: '10px', fontSize: '1rem' }} className="w-auto">
-                                Opciones: 
-                            </legend>
-
-                            <Row>
-                                <Col sm={1} />
-                                <Col>
-                                    <Form.Group controlId="cantNiveles">
-                                        <Form.Label size="sm">Cantidad de niveles</Form.Label>
-                                        <Form.Control as="select" size="sm" name="opciones.cantNiveles" 
-                                                      value={formValues.opciones.cantNiveles} 
-                                                      onChange={onInputChange}>
-                                            <option value="1">Un nivel</option>
-                                            <option value="2">Dos niveles</option>
-                                            <option value="3">Tres niveles</option>
-                                            <option value="4">Cuatro niveles</option>
-                                            <option value="5">Çinco niveles</option>
-                                            <option value="6">Seis niveles</option>
-                                            <option value="detalle">Nivel de detalle para cada cuenta</option>
-                                        </Form.Control>
-                                    </Form.Group>
-                                </Col>
-
-                                <Col sm={1} />
-
-                                <Col>
-                                    <fieldset className="border p-2">
-                                        <legend style={{ paddingLeft: '10px', paddingRight: '10px', fontSize: '1rem' }} className="w-auto">
-                                            Excluir cuentas contables:
-                                        </legend>
-                                        <Form.Group controlId="excluirCuentasSinSaldoNiMovtos">
-                                            <Form.Check type="checkbox"
-                                                        name="opciones.excluirCuentasSinSaldoNiMovtos"
-                                                        checked={formValues.opciones.excluirCuentasSinSaldoNiMovtos}
-                                                        onChange={onInputChange}
-                                                        label="Con saldo inicial cero y sin movimientos en el período" />
-                                        </Form.Group>
-                                        <Form.Group controlId="excluirCuentasConSaldoFinalCero">
-                                            <Form.Check type="checkbox" 
-                                                        name="opciones.excluirCuentasConSaldoFinalCero"
-                                                        checked={formValues.opciones.excluirCuentasConSaldoFinalCero}
-                                                        onChange={onInputChange}
-                                                        label="Con saldo final cero" />
-                                        </Form.Group>
-                                    </fieldset>
-                                </Col>
-                                <Col sm={1} />
-                            </Row>
-                            
-                        </fieldset>
-                    </Col>
-                    <Col sm={1} />
-                </Row>
-
             </Form>
 
             <Row style={{ marginTop: 'auto' }} className="align-bottom">

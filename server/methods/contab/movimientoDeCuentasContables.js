@@ -370,6 +370,7 @@ Meteor.methods(
             check(mes, String);
             check(ano, String);
             check(centrosCosto, Match.Integer);
+            check(cc, Match.Array);
             check(monedaId, Match.Integer);
             check(ciaContabId, Match.Integer);
 
@@ -447,6 +448,7 @@ Meteor.methods(
             check(mes, String);
             check(ano, String);
             check(centrosCosto, Match.Integer);
+            check(cc, Match.Array);
             check(monedaId, Match.Integer);
             check(ciaContabId, Match.Integer);
 
