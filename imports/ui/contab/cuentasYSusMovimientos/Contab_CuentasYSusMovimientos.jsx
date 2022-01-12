@@ -26,7 +26,9 @@ const Contab_CuentasYSusMovimientos = () => {
                     <Navbar.Toggle aria-controls="basic-navbar-nav" />
 
                     <Navbar.Collapse className="justify-content-end">
-                        <Nav.Link href="#link"><Question className="bootstrap-icon" size={26} /></Nav.Link>
+                        <Nav.Link href="https://sites.google.com/view/contabm-consultas/home/contab/movimiento-de-cuentas-contables" target="_blank">
+                            <Question className="bootstrap-icon" size={26} />
+                        </Nav.Link>
                         <Link className='text-link' to="/"><HouseFill className="bootstrap-icon" size={26} /></Link><br />
                     </Navbar.Collapse>
                 </Navbar>

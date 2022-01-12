@@ -83,7 +83,9 @@ const MovimientoDeCuentasContables = () => {
                         <Navbar.Text>
                             {companiaContabSeleccionada?.nombre && <span><em>{companiaContabSeleccionada.nombre}</em></span>}
                         </Navbar.Text>
-                        <Nav.Link href="#link"><Question className="bootstrap-icon" size={26} /></Nav.Link>
+                        <Nav.Link href="https://sites.google.com/view/contabm-consultas/home/contab/movimiento-de-cuentas-contables" target="_blank">
+                            <Question className="bootstrap-icon" size={26} />
+                        </Nav.Link>
                         <Link className='text-link' to="/"><HouseFill className="bootstrap-icon" size={26} /></Link><br />
                     </Navbar.Collapse>
                 </Navbar>

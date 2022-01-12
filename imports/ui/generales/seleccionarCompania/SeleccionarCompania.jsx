@@ -179,7 +179,9 @@ const SeleccionarCompaniaContab = () => {
                     <Navbar.Toggle aria-controls="basic-navbar-nav" />
 
                     <Navbar.Collapse className="justify-content-end">
-                        <Nav.Link href="#link"><Question className="bootstrap-icon" size={26} /></Nav.Link>
+                        <Nav.Link href="https://sites.google.com/view/contabm-consultas/home/generales/seleccionar-una-compa%C3%B1%C3%ADa" target="_blank">
+                            <Question className="bootstrap-icon" size={26} />
+                        </Nav.Link>
                         <Link className='text-link' to="/"><HouseFill className="bootstrap-icon" size={26} /></Link><br />
                     </Navbar.Collapse>
                 </Navbar>

@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React from 'react'; 
 import { Link } from "react-router-dom";
 
 import { Navbar, Nav, NavDropdown } from 'react-bootstrap';
@@ -13,6 +13,7 @@ const Home = () => {
     return (
         <>
             <Container>
+
                 <Navbar className="navbar" style={{ backgroundColor: 'white', marginBottom: '20px' }} expand="md">
                     <Navbar.Brand >
                         <Link to="/">
@@ -51,7 +52,7 @@ const Home = () => {
                     </Navbar.Collapse>
 
                     <Navbar.Collapse className="justify-content-end">
-                        <Nav.Link href="#link">
+                        <Nav.Link href="https://sites.google.com/view/contabm-consultas/home" target="_blank" >
                             <Question className="bootstrap-icon" size={26} />
                         </Nav.Link>
                     </Navbar.Collapse>
