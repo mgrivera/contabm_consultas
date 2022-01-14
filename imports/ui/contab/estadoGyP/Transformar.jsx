@@ -8,7 +8,10 @@ import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 
 import { Row, Col } from 'react-bootstrap';
-import { Table, Navbar, NavDropdown } from 'react-bootstrap';
+import { Table, Navbar, NavDropdown, Nav } from 'react-bootstrap';
+
+import Papa from 'papaparse';
+import saveAs from 'save-as'; 
 
 import ReactDataGrid from 'react-data-grid';
 import './react_data_grid.css';
@@ -177,6 +180,53 @@ const Transformar = ({ transformarGridData,
         setCurrentTab("movimientos");
     }
 
+    // para exportar el contenido del grid a un archivo de texto (csv) 
+    const exportToTextFile = () => { 
+
+        try {
+            const items = [...transformarGridData];
+            
+            // eliminamos algunas propiedades que no queremos en el txt (csv) 
+            items.forEach(x => {  
+                delete x.monedaId; 
+                delete x.cuentaContableEditada; 
+                delete x.cuentaId; 
+
+                x.saldoAnterior = lodash.round(x.saldoAnterior, 2);
+                x.sumOfDebe = lodash.round(x.sumOfDebe, 2);
+                x.sumOfHaber = lodash.round(x.sumOfHaber, 2);
+                x.saldoActual = lodash.round(x.saldoActual, 2);
+            }); 
+
+            // papaparse: convertimos el array json a un string csv ...
+            const config = {
+                // quotes: true,
+                // quoteChar: "'",
+                delimiter: "\t",
+                header: true
+            };
+            let csvString = Papa.unparse(items, config);
+
+            // cambiamos los headers por textos más apropiados (pareciera que ésto no se puede hacer desde el config)
+            csvString = csvString.replace("simboloMoneda", "moneda");
+            csvString = csvString.replace("cuentaContable", "cuenta contable");
+            csvString = csvString.replace("nombreCuentaContable", "nombre cuenta contable");
+            csvString = csvString.replace("ano", "año");
+
+            csvString = csvString.replace("saldoAnterior", "saldo ant");
+            csvString = csvString.replace("sumOfDebe", "debe");
+            csvString = csvString.replace("sumOfHaber", "haber");
+            csvString = csvString.replace("saldoActual", "saldo act");
+
+            var blob = new Blob([csvString], { type: "text/plain;charset=utf-8" });
+            saveAs(blob, "gyp");
+        }
+        catch (err) {
+            const message = err.message ? err.message : err.toString();
+            setMessage({ type: 'danger', message, show: true });
+        }
+    }
+
     const pagingText = `(${transformarGridData.length.toString()} registros)`;
 
     return (
@@ -223,8 +273,9 @@ const Transformar = ({ transformarGridData,
                             <NavDropdown.Item href="#" style={{ fontSize: '14px' }} onClick={() => reducirNiveles(6)}>
                                 Seis niveles
                             </NavDropdown.Item>
-                            
                         </NavDropdown>
+
+                        <Nav.Link href="#" onClick={exportToTextFile}>Exportar (texto)</Nav.Link>
 
                         <Navbar.Collapse className="justify-content-end">
                             <Navbar.Text>
